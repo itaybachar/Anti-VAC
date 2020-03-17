@@ -18,8 +18,8 @@ public:
     ~ProcessManager();
 
 public:
-    void read(uintptr_t add, void *buff);
-    void write(uintptr_t add, void *buff);
+    void read(uintptr_t add, void *buff,size_t size);
+    void write(uintptr_t add, void *buff,size_t size);
 
 public:
     bool wait(); //Wait for program to open in order to attach

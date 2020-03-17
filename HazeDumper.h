@@ -9,7 +9,7 @@
 
 class HazeDumper {
 private:
-    std::unordered_map<std::string,int> gameVars;
+    std::unordered_map<std::string,uint32_t> gameVars;
     std::string curLine;
     const char * dumpFile;
 

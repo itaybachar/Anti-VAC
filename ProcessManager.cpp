@@ -18,12 +18,12 @@ ProcessManager::~ProcessManager() {
     this->detach();
 }
 
-void ProcessManager::read(uintptr_t add, void *buff) {
-    ReadProcessMemory(handle,(void*)add,buff,sizeof(buff),nullptr);
+void ProcessManager::read(uintptr_t add, void *buff,size_t size) {
+    ReadProcessMemory(handle,(void*)add,buff,size,nullptr);
 }
 
-void ProcessManager::write(uintptr_t add, void *buff) {
-    WriteProcessMemory(handle,(void*)add,buff,sizeof(buff),nullptr);
+void ProcessManager::write(uintptr_t add, void *buff,size_t size) {
+    WriteProcessMemory(handle,(void*)add,buff,size,nullptr);
 }
 
 bool ProcessManager::wait() {

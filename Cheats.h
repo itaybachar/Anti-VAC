@@ -3,30 +3,33 @@
 //
 #pragma once
 
-#include <cinttypes>
+#include "windows.h"
+
 class ProcessManager;
 class HazeDumper;
 
 class Cheats {
 private:
     ProcessManager* proc;
-    uintptr_t m_client;
-    uintptr_t m_engine;
-    uint32_t m_localPlayer;
-    uint32_t m_localTeam;
+    DWORD m_client;
+    DWORD m_engine;
+    DWORD m_localPlayer;
+    DWORD m_localTeam;
 private:
-    uintptr_t dwLocalPlayer;
-    uintptr_t dwEntityList;
-    uintptr_t dwForceJump;
-    uintptr_t dwForceAttack;
-    uintptr_t dwGlowObjectManager;
-    uintptr_t m_flFlashDuration;
-    uintptr_t m_fFlags;
-    uintptr_t m_iTeamNum;
-    uintptr_t m_iCrosshairId;
+    DWORD dwLocalPlayer;
+    DWORD dwEntityList;
+    DWORD dwForceJump;
+    DWORD dwForceAttack;
+    DWORD dwGlowObjectManager;
+    DWORD m_flFlashDuration;
+    DWORD m_fFlags;
+    DWORD m_iTeamNum;
+    DWORD m_iCrosshairId;
+    DWORD m_iGlowIndex;
 private:
     bool glowEnabled;
     bool triggerEnabled;
+    bool noFlashEnabled;
 
 public:
     Cheats(ProcessManager *proc,HazeDumper * dumper);
@@ -36,6 +39,6 @@ private:
     void bunnyHop();
     void glow();
     void triggerBot();
-    void noSmoke();
+    void noFlash();
 
 };
