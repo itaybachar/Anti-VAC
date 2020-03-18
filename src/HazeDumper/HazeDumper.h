@@ -16,7 +16,9 @@ private:
 private:
     void skipLine(std::ifstream * s,uint32_t count);
     void addItem();
-    void readDump();
+    void fetchFile();
+    bool readDump();
+    
 public:
     HazeDumper(const char * fileName = "csgo.json");
     ~HazeDumper();

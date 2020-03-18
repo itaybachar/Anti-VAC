@@ -9,12 +9,35 @@
 
 HazeDumper::HazeDumper(const char * fileName):
 dumpFile(fileName){
-    readDump();
+    if(!readDump()){
+        fetchFile();
+        if(!readDump()){
+            puts("Could not fetch dump file, check your network.");
+            system("pause");
+            exit(3);
+        }
+    }
 }
 
 HazeDumper::~HazeDumper() {}
 
-void HazeDumper::readDump() {
+void HazeDumper::fetchFile() {
+    std::string script =
+    "import  urllib.request;"
+    "page = urllib.request.urlopen(\"https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.json\").read();"
+    "outFile = open(\"csgo.json\",\"w\");"
+    "outFile.write(str(page.decode(\"utf-8\")))";
+    "outFile.close();";
+
+    std::ofstream pyScript("hazeFetch.py");
+    pyScript<<script.c_str();
+    pyScript.close();
+
+    system("py hazeFetch.py");
+    std::remove("hazeFetch.py");
+}
+
+bool HazeDumper::readDump() {
     std::ifstream stream(this->dumpFile);
 
     if (stream.is_open()) {
@@ -28,10 +51,10 @@ void HazeDumper::readDump() {
                 break;
             addItem();
         }
+        stream.close();
+        return true;
     } else {
-        puts("Couldn't Find Dump File");
-        system("pause");
-        exit(3);
+        return false;
     }
 }
 
