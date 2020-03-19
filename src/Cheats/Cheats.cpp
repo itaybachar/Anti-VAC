@@ -46,6 +46,7 @@ Cheats::~Cheats() {
 void Cheats::run() {
     std::thread* bhop,*glow,*tbot,*noflash;
     bool init = false;
+    printStatus();
     while(proc->isRunning() && !(GetAsyncKeyState(VK_MENU) && GetAsyncKeyState(0x51))){ //rt Alt and Q to quit
         //Local Player
         proc->read(m_client+dwLocalPlayer,&m_localPlayer,sizeof(DWORD));
@@ -54,14 +55,17 @@ void Cheats::run() {
 
         if(GetAsyncKeyState(VK_F1) & 1) {
             glowEnabled = !glowEnabled;
+            printStatus();
         }
 
         if(GetAsyncKeyState(VK_F2) & 1) {
             triggerEnabled = !triggerEnabled;
+            printStatus();
         }
 
         if(GetAsyncKeyState(VK_F3) & 1) {
             noFlashEnabled = !noFlashEnabled;
+            printStatus();
         }
 
         if(!init){
@@ -71,7 +75,7 @@ void Cheats::run() {
             //tbot = new std::thread(&Cheats::triggerBot,this);
             init = true;
         }
-        Sleep(1000);
+        Sleep(500);
     }
 
     delete bhop;
@@ -159,4 +163,19 @@ void Cheats::noFlash() {
         if(flashDuration>0)
             proc->write(m_localPlayer + m_flFlashDuration,&val,sizeof(float));
     }
+}
+
+void Cheats::printStatus(){
+    //Clear Screen
+    system("cls");
+
+    //Display Bunny Hop
+    puts("Hold Space to Bunny Hop");
+
+    //Display Glow
+    std::cout<<std::boolalpha;
+    std::cout<<"Press F1 to toggle Glow: "<< glowEnabled <<std::endl;
+    std::cout<<"Press F2 to toggle Trigger Bot: "<< triggerEnabled <<std::endl;
+    std::cout<<"Press F3 to toggle No Flash: "<< noFlashEnabled <<std::endl;
+
 }

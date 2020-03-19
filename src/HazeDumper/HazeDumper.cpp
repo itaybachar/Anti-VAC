@@ -33,7 +33,7 @@ void HazeDumper::fetchFile() {
     pyScript<<script.c_str();
     pyScript.close();
 
-    system("py hazeFetch.py");
+    system("python hazeFetch.py");
     std::remove("hazeFetch.py");
 }
 

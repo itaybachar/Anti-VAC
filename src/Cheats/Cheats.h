@@ -40,5 +40,6 @@ private:
     void glow();
     void triggerBot();
     void noFlash();
+    void printStatus();
 
 };
