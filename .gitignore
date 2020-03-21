@@ -14,3 +14,7 @@ _deps
 build/*
 !build/Makefile
 !build/.gitkeep
+
+#Sublime Project
+*.sublime-project
+*sublime-workspace

@@ -17,6 +17,8 @@ private:
     DWORD m_localTeam;
 private:
     DWORD dwLocalPlayer;
+    DWORD dwClientState_GetLocalPlayer;
+    DWORD dwClientState_ViewAngles;
     DWORD dwEntityList;
     DWORD dwForceJump;
     DWORD dwForceAttack;
@@ -26,10 +28,22 @@ private:
     DWORD m_iTeamNum;
     DWORD m_iCrosshairId;
     DWORD m_iGlowIndex;
+    DWORD m_vecOrigin;
+    DWORD m_vecViewOffset;
+    DWORD m_iHealth;
+    DWORD m_lifeState;
+    DWORD m_bDormant;
+    DWORD m_bSpottedByMask;
+    DWORD m_dwBoneMatrix;
+
+
+    
 private:
     bool glowEnabled;
     bool triggerEnabled;
     bool noFlashEnabled;
+    bool aimbotEnabled;
+    bool kill;
 
 public:
     Cheats(ProcessManager *proc,HazeDumper * dumper);
@@ -39,7 +53,10 @@ private:
     void bunnyHop();
     void glow();
     void triggerBot();
+    void aimBot();
     void noFlash();
     void printStatus();
+    std::tuple<float,float> calcAngles(float* from, float* to);
+    void getBoneLocation(DWORD* boneMatrix, uint8_t bId, float* out);
 
 };

@@ -4,37 +4,50 @@
 
 #include <thread>
 #include <iostream>
+#include <math.h>
 
 #include "Cheats.h"
 #include "ProcessManager.h"
 #include "HazeDumper.h"
+#include "Vec3.h"
 
 #define VAR2STR(Variable) (#Variable)
 #define FL_ONGROUND (1<<0)
 
 Cheats::Cheats(ProcessManager *proc, HazeDumper * dumper):
-    proc(proc),
-    m_client(proc->waitModule("client_panorama.dll")),
-    m_engine(proc->waitModule("engine.dll")),
-    m_localPlayer(0),
-    m_localTeam(0),
+proc(proc),
+m_client(proc->waitModule("client_panorama.dll")),
+m_engine(proc->waitModule("engine.dll")),
+m_localPlayer(0),
+m_localTeam(0),
 
     //Variables
-    dwLocalPlayer(dumper->getPointer(VAR2STR(dwLocalPlayer))),
-    dwEntityList(dumper->getPointer(VAR2STR(dwEntityList))),
-    dwForceJump(dumper->getPointer(VAR2STR(dwForceJump))),
-    dwForceAttack(dumper->getPointer(VAR2STR(dwForceAttack))),
-    dwGlowObjectManager(dumper->getPointer(VAR2STR(dwGlowObjectManager))),
-    m_flFlashDuration(dumper->getPointer(VAR2STR(m_flFlashDuration))),
-    m_fFlags(dumper->getPointer(VAR2STR(m_fFlags))),
-    m_iTeamNum(dumper->getPointer(VAR2STR(m_iTeamNum))),
-    m_iCrosshairId(dumper->getPointer(VAR2STR(m_iCrosshairId))),
-    m_iGlowIndex(dumper->getPointer(VAR2STR(m_iGlowIndex))),
+dwLocalPlayer(dumper->getPointer(VAR2STR(dwLocalPlayer))),
+dwClientState_GetLocalPlayer(dumper->getPointer(VAR2STR(dwClientState_GetLocalPlayer))),
+dwClientState_ViewAngles(dumper->getPointer(VAR2STR(dwClientState_ViewAngles))),
+dwEntityList(dumper->getPointer(VAR2STR(dwEntityList))),
+dwForceJump(dumper->getPointer(VAR2STR(dwForceJump))),
+dwForceAttack(dumper->getPointer(VAR2STR(dwForceAttack))),
+dwGlowObjectManager(dumper->getPointer(VAR2STR(dwGlowObjectManager))),
+m_flFlashDuration(dumper->getPointer(VAR2STR(m_flFlashDuration))),
+m_fFlags(dumper->getPointer(VAR2STR(m_fFlags))),
+m_iTeamNum(dumper->getPointer(VAR2STR(m_iTeamNum))),
+m_iCrosshairId(dumper->getPointer(VAR2STR(m_iCrosshairId))),
+m_iGlowIndex(dumper->getPointer(VAR2STR(m_iGlowIndex))),
+m_vecOrigin(dumper->getPointer(VAR2STR(m_vecOrigin))),
+m_vecViewOffset(dumper->getPointer(VAR2STR(m_vecViewOffset))),
+m_iHealth(dumper->getPointer(VAR2STR(m_iHealth))),
+m_lifeState(dumper->getPointer(VAR2STR(m_lifeState))),
+m_bDormant(dumper->getPointer(VAR2STR(m_bDormant))),
+m_bSpottedByMask(dumper->getPointer(VAR2STR(m_bSpottedByMask))),
+m_dwBoneMatrix(dumper->getPointer(VAR2STR(m_dwBoneMatrix))),
 
     //Flags
-    glowEnabled(false),
-    triggerEnabled(false),
-    noFlashEnabled(false)
+glowEnabled(false),
+triggerEnabled(false),
+noFlashEnabled(false),
+aimbotEnabled(false),
+kill(false)
 {
     delete dumper;
 }
@@ -44,14 +57,28 @@ Cheats::~Cheats() {
 }
 
 void Cheats::run() {
-    std::thread* bhop,*glow,*tbot,*noflash;
+    std::thread* bhop,*glow,*tbot,*aimbot,*noflash;
     bool init = false;
     printStatus();
-    while(proc->isRunning() && !(GetAsyncKeyState(VK_MENU) && GetAsyncKeyState(0x51))){ //rt Alt and Q to quit
-        //Local Player
-        proc->read(m_client+dwLocalPlayer,&m_localPlayer,sizeof(DWORD));
+
+    //Initial Read
+    proc->read(m_client+dwLocalPlayer,&m_localPlayer,sizeof(DWORD));
+
+    while(proc->isRunning()){ 
+        //rt Alt and Q to quit
+        if(GetAsyncKeyState(VK_MENU) && GetAsyncKeyState(0x51)){
+            kill = true;
+            break;
+        }
+
+        //Read local player health or team if bogus reread the localplayer
         //Local Team
         proc->read(m_localPlayer+m_iTeamNum,&m_localTeam,sizeof(DWORD));
+
+        //Update local player if team not 2 or 3
+        if(m_localTeam != 2 && m_localTeam != 3)
+            proc->read(m_client+dwLocalPlayer,&m_localPlayer,sizeof(DWORD));
+        
 
         if(GetAsyncKeyState(VK_F1) & 1) {
             glowEnabled = !glowEnabled;
@@ -68,11 +95,17 @@ void Cheats::run() {
             printStatus();
         }
 
+        if(GetAsyncKeyState(VK_F4) & 1) {
+            aimbotEnabled = !aimbotEnabled;
+            printStatus();
+        }
+
         if(!init){
             bhop = new std::thread(&Cheats::bunnyHop,this);
             glow = new std::thread(&Cheats::glow,this);
             noflash = new std::thread(&Cheats::noFlash,this);
-            //tbot = new std::thread(&Cheats::triggerBot,this);
+            aimbot = new std::thread(&Cheats::aimBot,this);
+            tbot = new std::thread(&Cheats::triggerBot,this);
             init = true;
         }
         Sleep(500);
@@ -81,11 +114,12 @@ void Cheats::run() {
     delete bhop;
     delete glow;
     delete tbot;
+    delete aimbot;
     delete noflash;
 }
 
 void Cheats::bunnyHop() {
-    while (true) {
+    while (!kill) {
         uint32_t flag;
         uint8_t val = 6;
         if (GetAsyncKeyState(VK_SPACE)) {
@@ -98,7 +132,7 @@ void Cheats::bunnyHop() {
 }
 
 void Cheats::glow() {
-    while (true) {
+    while (!kill) {
         if (!glowEnabled) {
             Sleep(500);
             continue;
@@ -108,12 +142,14 @@ void Cheats::glow() {
         proc->read(m_client + dwGlowObjectManager, &glowmngr,sizeof(DWORD));
 
         //Loop through entities
-        for (uint32_t i = 0; i < 16; i++) {
+        for (uint8_t i = 0; i < 32; i++) {
             DWORD entity;
+            uint8_t lifestate;
             //Get entity
             proc->read(m_client + dwEntityList + i * 0x10, &entity,sizeof(DWORD));
+            proc->read(entity + m_lifeState,&lifestate,sizeof(uint8_t));
 
-            if (entity > 0 && entity != m_localPlayer) {
+            if (lifestate == 0 && entity > 0 && entity != m_localPlayer) {
                 uint32_t team;
                 DWORD glowIndex;
                 //Get the team
@@ -148,11 +184,127 @@ void Cheats::glow() {
 }
 
 void Cheats::triggerBot() {
+    uint8_t val = 6;
+    while(!kill){
+        if(!triggerEnabled){
+            Sleep(500);
+            continue;
+        }
+        uint8_t id,eTeam;
+        DWORD entity;
+            //Get ID in crossair
+        proc->read(m_localPlayer + m_iCrosshairId, &id, sizeof(uint8_t));
+        if(id>0 && id<64){
+            //Get Entity
+            proc->read(m_client + dwEntityList + ((id-1) * 0x10), &entity, sizeof(DWORD));
+            //Check Entity team
+            proc->read(entity + m_iTeamNum, &eTeam, sizeof(uint8_t));
+            //If not in current team, shoot.
+            if(eTeam != m_localTeam)
+                proc->write(m_client + dwForceAttack, &val, sizeof(uint8_t));
+            
+        }
 
+    }
+}
+
+
+void Cheats::aimBot(){
+    while(!kill){
+        if(!aimbotEnabled){
+            Sleep(500);
+            continue;
+        }
+        
+        //Get client's ID
+        uint8_t localID;
+        proc->read(m_engine + dwClientState_GetLocalPlayer,&localID,sizeof(uint8_t));
+
+
+        //
+        float org[3];
+        float playerHead[3];
+        proc->read(m_localPlayer + m_vecOrigin,&org,sizeof(org));
+        proc->read(m_localPlayer + m_vecViewOffset,&playerHead,sizeof(playerHead));
+        playerHead[0] += org[0];
+        playerHead[1] += org[1];
+        playerHead[2] += org[2];
+
+        //Get angles
+        //Get current player head pos
+        for(uint8_t i = 0; i<32; i++){
+            DWORD entity;
+            uint8_t lifestate,eTeam;
+            bool dormant;
+
+            proc->read(m_client + dwEntityList +(i*0x10),&entity,sizeof(DWORD));
+
+            //Check dormant
+            proc->read(entity + m_bDormant,&dormant,sizeof(bool));
+            if(dormant) 
+                continue;
+            
+            //Check team
+            proc->read(entity + m_iTeamNum,&eTeam,sizeof(uint8_t));
+            if(eTeam == m_localTeam)
+                continue;
+
+            //Check health
+            proc->read(entity + m_lifeState,&lifestate,sizeof(uint8_t));
+            if(lifestate != 0) 
+                continue;
+
+            //Check if player is visible
+            uint32_t spottedMask;
+            proc->read(entity + m_bSpottedByMask,&spottedMask,sizeof(uint32_t));
+            //if not spotted
+            if(!(spottedMask & (1 << localID)))
+                continue;
+            DWORD boneMatrix;
+            proc->read(entity + m_dwBoneMatrix,&boneMatrix,sizeof(DWORD));
+            //std::cout<<boneMatrix<<std::endl;
+            float* eHead;
+            getBoneLocation(&boneMatrix,8,eHead);
+            std::cout<<eHead[0]<<" " << eHead[0]<<std::endl;
+            //std::tuple<float,float> angles = calcAngles(playerHead,eHead);
+
+            //float viewAngles[2] = { std::get<0>(angles) ,std::get<1>(angles) };
+
+          //  if(viewAngles[0] >= -89 && viewAngles[0] <= 89 &&
+          //      viewAngles[1] >= -180 && viewAngles[1] <=180){
+                //proc->write(m_engine + dwClientState_GetLocalPlayer + dwClientState_ViewAngles,&viewAngles,sizeof(viewAngles));
+
+          //      std::cout<<viewAngles[0]<<" " << viewAngles[1]<<std::endl;
+          //  }
+            //Get head position, bone matrix, get head
+            //calc angles
+            //clamp angles
+            //check if angles close enough to clip
+    }
+}
+}
+
+
+std::tuple<float,float> Cheats::calcAngles(float* from, float* to){
+    float delta[3] = {to[0] - from[0], to[1] - from[1], to[2] - from[2]};
+
+    float len = sqrt(delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2]);
+
+    float pitch = -asin(delta[2]/len)*(180/M_PI);
+    float yaw = atan2(delta[1],delta[0]);
+
+    return {pitch,yaw};
+}
+
+void Cheats::getBoneLocation(DWORD* boneMatrix, uint8_t bId, float* out){
+    std::cout<<"Hello";
+    proc->read(*boneMatrix + (0x30 * bId) + 0x0C,out,sizeof(out));
+   // proc->read(*boneMatrix + (0x30 * bId) + 0x1C,&out[1],sizeof(float));
+   // proc->read(*boneMatrix + (0x30 * bId) + 0x2C,&out[2],sizeof(float));
 }
 
 void Cheats::noFlash() {
-    while(true){
+    while(!kill){
         if (!noFlashEnabled) {
             Sleep(500);
             continue;
@@ -177,5 +329,5 @@ void Cheats::printStatus(){
     std::cout<<"Press F1 to toggle Glow: "<< glowEnabled <<std::endl;
     std::cout<<"Press F2 to toggle Trigger Bot: "<< triggerEnabled <<std::endl;
     std::cout<<"Press F3 to toggle No Flash: "<< noFlashEnabled <<std::endl;
-
+    std::cout<<"Press F4 to toggle No Flash: "<< aimbotEnabled <<std::endl;
 }

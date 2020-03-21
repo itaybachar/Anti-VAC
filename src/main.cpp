@@ -15,6 +15,7 @@ int main() {
     puts("Searching for Program...");
     if (!wait_thread.get()) {
         puts("ERROR: Unable to attach to program!");
+        system("pause");
         exit(1);
     } else {
         puts("SUCCESS: Program attached successfully");

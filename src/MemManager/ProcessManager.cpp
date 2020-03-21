@@ -28,6 +28,8 @@ void ProcessManager::write(uintptr_t add, void *buff,size_t size) {
 
 bool ProcessManager::wait() {
     while(!isRunning()){
+        if(GetAsyncKeyState(VK_MENU) && GetAsyncKeyState(0x51))
+            return false;
         Sleep(500);//Wait half a second before checking for program again
     }
     return attach();

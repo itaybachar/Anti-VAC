@@ -175,6 +175,19 @@ MemMan/fast:
 .PHONY : MemMan/fast
 
 #=============================================================================
+# Target rules for targets named Util
+
+# Build rule for target.
+Util: cmake_check_build_system
+	$(MAKE) -f CMakeFiles\Makefile2 Util
+.PHONY : Util
+
+# fast build rule for target.
+Util/fast:
+	$(MAKE) -f src\Util\CMakeFiles\Util.dir\build.make src/Util/CMakeFiles/Util.dir/build
+.PHONY : Util/fast
+
+#=============================================================================
 # Target rules for targets named Cheats
 
 # Build rule for target.
@@ -200,6 +213,7 @@ help:
 	@echo ... Anti-VAC
 	@echo ... HazeImporter
 	@echo ... MemMan
+	@echo ... Util
 	@echo ... Cheats
 .PHONY : help
 
