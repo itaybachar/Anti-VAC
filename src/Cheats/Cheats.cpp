@@ -58,7 +58,7 @@ Cheats::~Cheats() {
 }
 
 void Cheats::run() {
-    std::thread* bhop,*glow,*tbot,*aimbot,*noflash;
+    std::thread* bhop,*glow,*tbot,*aimbot,*noflash,*recoil;
     bool init = false;
     printStatus();
 
@@ -107,6 +107,7 @@ void Cheats::run() {
             noflash = new std::thread(&Cheats::noFlash,this);
             aimbot = new std::thread(&Cheats::aimBot,this);
             tbot = new std::thread(&Cheats::triggerBot,this);
+           // recoil = new std::thread(&Cheats::noRecoil,this);
             init = true;
         }
         Sleep(500);
@@ -220,7 +221,7 @@ void Cheats::triggerBot() {
 
 
 void Cheats::aimBot() {
-    uint8_t aimToBone[] = {8,5};
+    uint8_t aimToBone[] = {5,8};
     float aimToLocations[ENTITY_COUNT*2];
     float localAngles[2];
     float org[3];
@@ -235,11 +236,6 @@ void Cheats::aimBot() {
 
         uint8_t aimToCount = 0;
 
-        //Get client's ID
-        uint8_t localID;
-        proc->read(m_engine + dwClientState_GetLocalPlayer, &localID, sizeof(uint8_t));
-
-
         //Get local player head location
         proc->read(m_localPlayer + m_vecOrigin, &org, sizeof(org));
         proc->read(m_localPlayer + m_vecViewOffset, &playerHead, sizeof(playerHead));
@@ -251,7 +247,9 @@ void Cheats::aimBot() {
         DWORD clientState;
         proc->read(m_engine + dwClientState, &clientState, sizeof(DWORD));
         proc->read(clientState + dwClientState_ViewAngles, localAngles,sizeof(float) * 2);
-
+        //Get client's ID
+        uint32_t localID;
+        proc->read(clientState + dwClientState_GetLocalPlayer, &localID, sizeof(uint32_t));
 
         //Get current player head pos
         for (uint8_t i = 0; i < ENTITY_COUNT; i++) {
@@ -265,6 +263,7 @@ void Cheats::aimBot() {
             proc->read(entity + m_bDormant, &dormant, sizeof(bool));
             if (dormant)
                 continue;
+            
 
             //Check team
             proc->read(entity + m_iTeamNum, &eTeam, sizeof(uint8_t));
@@ -283,8 +282,9 @@ void Cheats::aimBot() {
             if (!(spottedMask & (1 << localID)))
                 continue;
             DWORD boneMatrix;
+
+
             proc->read(entity + m_dwBoneMatrix, &boneMatrix, sizeof(DWORD));
-            
             float boneLocation[3];
             for(uint8_t j : aimToBone){
                 getBoneLocation(&boneMatrix, j, boneLocation);
@@ -298,13 +298,20 @@ void Cheats::aimBot() {
             }
         }
         //All Angles calculated, Choose closest one.
+        uint8_t bestIndex = 0;
+        float bestDist = 10000;
+
+        //Get closest angle to aim at
         for(uint8_t i = 0; i<aimToCount; i++){
             float dist = getDistance2D(localAngles,&aimToLocations[i*2]);
             if(dist<clipRange){
-                smoothAim(localAngles,&aimToLocations[i*2],30,clientState);
-                break;
+                bestDist = dist;
+                bestIndex = i;
             }
         }
+        //Aim
+        if(bestDist<clipRange)
+            smoothAim(localAngles,&aimToLocations[bestIndex*2],15,clientState);
     }
 }
 
@@ -341,7 +348,6 @@ void Cheats::smoothAim(float* from, float* to, uint8_t steps, DWORD& clientState
         //Write new location
         if(!GetAsyncKeyState(VK_MBUTTON)){
             proc->write(clientState + dwClientState_ViewAngles, from,sizeof(float) * 2);
-            Sleep(1);
         }
     }
 }
@@ -350,6 +356,40 @@ void Cheats::getBoneLocation(DWORD* boneMatrix, uint8_t bId, float* out){
     proc->read(*boneMatrix + (0x30 * bId) + 0x0C,out,sizeof(out));
     proc->read(*boneMatrix + (0x30 * bId) + 0x1C,&out[1],sizeof(float));
     proc->read(*boneMatrix + (0x30 * bId) + 0x2C,&out[2],sizeof(float));
+}
+
+void Cheats::noRecoil(){
+    float oldAimPunch[2] = { 0.0, 0.0};
+    while(!kill){
+        //Get angles
+        float localAngles[2];
+        DWORD clientState;
+        uint8_t val;
+        proc->read(m_engine + dwClientState, &clientState, sizeof(DWORD));
+        proc->read(clientState + dwClientState_ViewAngles, localAngles,sizeof(float) * 2);
+        proc->read(m_client + dwForceAttack, &val, sizeof(uint8_t));
+        float aimPunch[2];
+        if(val !=4){
+            if(oldAimPunch[0] == 0){
+                proc->read(m_localPlayer + 12332,&oldAimPunch,sizeof(aimPunch));
+                oldAimPunch[0] *= 2;
+                oldAimPunch[0] *= 2;
+
+            }
+            proc->read(m_localPlayer + 12332,&aimPunch,sizeof(aimPunch));
+            aimPunch[0] *= 2;
+            aimPunch[0] *= 2;
+            localAngles[0] = localAngles[0] + oldAimPunch[0] - aimPunch[0];
+            localAngles[1] = localAngles[1] + oldAimPunch[1] - aimPunch[1];
+
+            proc->write(clientState + dwClientState_ViewAngles, localAngles,sizeof(float) * 2);
+            oldAimPunch[0] = aimPunch[0];
+            oldAimPunch[1] = aimPunch[1];
+        }else{
+            oldAimPunch[0] = 0;
+            oldAimPunch[1] = 0;
+        }
+    }
 }
 
 void Cheats::noFlash() {

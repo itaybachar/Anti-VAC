@@ -55,6 +55,7 @@ private:
     void triggerBot();
     void aimBot();
     void noFlash();
+    void noRecoil();
     void printStatus();
     void getBoneLocation(DWORD* boneMatrix, uint8_t bId, float* out);
     void smoothAim(float* from, float* to, uint8_t steps, DWORD& clientState);
