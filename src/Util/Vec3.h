@@ -1,5 +1,5 @@
 #pragma once
-
+//Not in use, I do not know how to create generic classes...
 template <class T>
 class Vec3{
 private:

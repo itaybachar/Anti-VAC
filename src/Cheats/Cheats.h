@@ -17,6 +17,7 @@ private:
     DWORD m_localTeam;
 private:
     DWORD dwLocalPlayer;
+    DWORD dwClientState;
     DWORD dwClientState_GetLocalPlayer;
     DWORD dwClientState_ViewAngles;
     DWORD dwEntityList;
@@ -35,8 +36,6 @@ private:
     DWORD m_bDormant;
     DWORD m_bSpottedByMask;
     DWORD m_dwBoneMatrix;
-
-
     
 private:
     bool glowEnabled;
@@ -44,6 +43,7 @@ private:
     bool noFlashEnabled;
     bool aimbotEnabled;
     bool kill;
+    static constexpr uint8_t ENTITY_COUNT = 32;
 
 public:
     Cheats(ProcessManager *proc,HazeDumper * dumper);
@@ -56,7 +56,9 @@ private:
     void aimBot();
     void noFlash();
     void printStatus();
-    std::tuple<float,float> calcAngles(float* from, float* to);
     void getBoneLocation(DWORD* boneMatrix, uint8_t bId, float* out);
-
+    void smoothAim(float* from, float* to, uint8_t steps, DWORD& clientState);
+    float getDistance3D(float* from, float* to, float* deltaOut);
+    float getDistance2D(float* from, float* to);
+    std::tuple<float,float> calcAngles(float* from, float* to);
 };

@@ -26,9 +26,10 @@ int main() {
     puts("Starting Up");
     cheats->run();
 
-    puts("Exiting...");
+    puts("Cleaning Up...");
     delete dumper;
     delete csgo;
     delete cheats;
+    puts("Exiting...");
     return 0;
 }

@@ -73,7 +73,7 @@ bool ProcessManager::detach() {
 
 uintptr_t ProcessManager::getModule(const char *modName) {
     MODULEENTRY32 modEntry;
-    if(findModule(modName,&modEntry)){
+    if(findModule(modName,modEntry)){
         return (uintptr_t)modEntry.modBaseAddr;
     }
     return 0;
@@ -108,7 +108,7 @@ bool ProcessManager::findProcess() {
     return false;
 }
 
-bool ProcessManager::findModule(const char * modName, MODULEENTRY32 * modEntry) {
+bool ProcessManager::findModule(const char * modName, MODULEENTRY32& modEntry) {
     MODULEENTRY32 mEntry;
 
     ZeroMemory(&mEntry, sizeof(mEntry));
@@ -119,7 +119,7 @@ bool ProcessManager::findModule(const char * modName, MODULEENTRY32 * modEntry) 
     if (hSnap && Module32Next(hSnap, &mEntry)) {
         do {
             if (strcmp(mEntry.szModule, modName) == 0) {
-                modEntry = &mEntry;
+                modEntry = mEntry;
                 CloseHandle(hSnap);
                 return true;
             }

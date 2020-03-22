@@ -33,5 +33,5 @@ public:
 
 private:
     bool findProcess();
-    bool findModule(const char *modName, MODULEENTRY32 *modEntry);
+    bool findModule(const char *modName, MODULEENTRY32& modEntry);
 };
