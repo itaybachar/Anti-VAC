@@ -9,7 +9,6 @@
 #include "Cheats.h"
 #include "ProcessManager.h"
 #include "HazeDumper.h"
-#include "Vec3.h"
 
 #define VAR2STR(Variable) (#Variable)
 #define FL_ONGROUND (1<<0)
