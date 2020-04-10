@@ -13,4 +13,4 @@ target_link_libraries(Cheats Util)
 add_executable(Anti-VAC main.cpp)
 
 target_link_libraries(Anti-VAC Cheats)
-
+target_link_libraries(Anti-VAC winmm.lib)

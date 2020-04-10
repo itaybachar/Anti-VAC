@@ -6,7 +6,6 @@
 #include <future>
 
 int main() {
-
     auto *dumper = new HazeDumper();
 
     auto *csgo = new ProcessManager("csgo.exe");

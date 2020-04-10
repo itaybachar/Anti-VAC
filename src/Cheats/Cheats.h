@@ -63,3 +63,25 @@ private:
     float getDistance2D(float* from, float* to);
     std::tuple<float,float> calcAngles(float* from, float* to);
 };
+
+namespace SoundManager{
+    enum{
+        WALLHACK = 0,
+        AIMBOT = 1,
+        TRIGGER = 2,
+        NOFLASH = 3
+    };
+
+    static const char* sounds[] = {
+        "../Sounds/Walls off",
+        "../Sounds/Walls on",
+        "../Sounds/Aimbot off",
+        "../Sounds/Aimbot on",
+        "../Sounds/Triggerbot, off",
+        "../Sounds/Triggerbot, on",
+        "../Sounds/No Flash, off",
+        "../Sounds/No Flash, on"
+    };
+
+    void playSound(uint8_t hackType, uint8_t state);
+}

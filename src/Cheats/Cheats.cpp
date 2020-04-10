@@ -13,6 +13,12 @@
 #define VAR2STR(Variable) (#Variable)
 #define FL_ONGROUND (1<<0)
 
+//SoundManager
+void SoundManager::playSound(uint8_t hackType, uint8_t state){
+    PlaySound(SoundManager::sounds[hackType*2 + state],NULL,SND_ASYNC);
+}
+
+//Cheats
 Cheats::Cheats(ProcessManager *proc, HazeDumper * dumper):
 proc(proc),
 m_client(proc->waitModule("client_panorama.dll")),
@@ -71,33 +77,33 @@ void Cheats::run() {
             break;
         }
 
-        //Read local player health or team if bogus reread the localplayer
-        //Local Team
-        proc->read(m_localPlayer+m_iTeamNum,&m_localTeam,sizeof(DWORD));
-
-        //Update local player if team not 2 or 3
-        if(m_localTeam != 2 && m_localTeam != 3)
-            proc->read(m_client+dwLocalPlayer,&m_localPlayer,sizeof(DWORD));
-        
-
         if(GetAsyncKeyState(VK_F1) & 1) {
             glowEnabled = !glowEnabled;
+            SoundManager::playSound(SoundManager::WALLHACK,glowEnabled);
             printStatus();
         }
 
         if(GetAsyncKeyState(VK_F2) & 1) {
             triggerEnabled = !triggerEnabled;
+            SoundManager::playSound(SoundManager::TRIGGER,triggerEnabled);
             printStatus();
         }
 
         if(GetAsyncKeyState(VK_F3) & 1) {
             noFlashEnabled = !noFlashEnabled;
+            SoundManager::playSound(SoundManager::NOFLASH,noFlashEnabled);
             printStatus();
         }
 
         if(GetAsyncKeyState(VK_F4) & 1) {
             aimbotEnabled = !aimbotEnabled;
+            SoundManager::playSound(SoundManager::AIMBOT,aimbotEnabled);
             printStatus();
+        }
+
+        //Update Local Player
+        if(GetAsyncKeyState(VK_F9) & 1) {
+            proc->read(m_client+dwLocalPlayer,&m_localPlayer,sizeof(DWORD));
         }
 
         if(!init){
@@ -202,7 +208,7 @@ void Cheats::triggerBot() {
         }
         uint8_t id,eTeam;
         DWORD entity;
-            //Get ID in crossair
+        //Get ID in crossair
         proc->read(m_localPlayer + m_iCrosshairId, &id, sizeof(uint8_t));
         if(id>0 && id<64){
             //Get Entity
