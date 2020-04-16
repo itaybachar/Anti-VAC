@@ -77,6 +77,9 @@ void Cheats::run() {
             break;
         }
 
+    //Initial Read
+    proc->read(m_localPlayer+m_iTeamNum,&m_localTeam,sizeof(DWORD));
+
         if(GetAsyncKeyState(VK_F1) & 1) {
             glowEnabled = !glowEnabled;
             SoundManager::playSound(SoundManager::WALLHACK,glowEnabled);
