@@ -1,6 +1,6 @@
 #include <iostream>
 #include <Windows.h>
-#includ "HazeDumper.h"
+#include "HazeDumper.h"
 #include "ProcessManager.h"
 #include "Cheats.h"
 #include <future>
